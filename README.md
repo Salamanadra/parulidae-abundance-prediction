@@ -45,7 +45,7 @@ Traditional ecological theory suggests that species occupying broader environmen
 
 ### Statistical Analysis
 - Correlation analysis: niche properties vs. abundance
-- Multivariate regression models (GAM, Random Forest)
+- Multivariate regression models
 - Feature importance analysis
 - Cross-validation for model robustness
 
@@ -95,6 +95,19 @@ jupyter notebook notebooks/01_data_loading_exploration.ipynb
 Run notebooks in sequence (01-05).
 
 ---
+
+## Reproducibility Note
+
+This analysis reproduces and extends ecological niche modeling originally 
+conducted in R (Script_OMI_proceso2.R). The Python implementation:
+
+- Uses public data from Figshare
+- Maintains fidelity to original R analysis
+- Improves code documentation and reproducibility
+- Enables integration with modern Python data science tolos
+
+---
+
 
 ## 📚 Citation
 
