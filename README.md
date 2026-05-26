@@ -1,142 +1,302 @@
-# Niche Position and Niche Breadth Effects on Population Abundances: New World Warblers (Parulidae)
+# Niche Metrics and Population Abundance in New World Warblers (Parulidae)
 
-## 📄 Publication
+A Python implementation of ecological niche analysis and phylogenetic generalized least squares (PGLS) modeling for New World Warblers (*Parulidae*), reproducing and extending analyses originally conducted in R.
 
-**Castaño-Quintero, S.**, Velasco, J., González-Voyer, A., Martínez-Meyer, E., & Yáñez-Arenas, C. (2024).  
-Niche position and niche breadth effects on population abundances: A case study of New World Warblers (Parulidae).  
-*Ecology and Evolution*, 14(3), e11108.  
+---
+
+## 🎯 Project Overview
+
+This repository contains reproducible Python code for analyzing the relationship between **ecological niche metrics** (Niche Position and Niche Breadth) and **population abundance** in 47 species of New World Warblers, controlling for phylogenetic non-independence and body mass.
+
+### Key Question
+
+**Does ecological niche structure (position and breadth in environmental space) predict population abundance in Parulidae?**
+
+---
+
+## 📊 Main Findings
+
+### Niche Breadth is the Primary Predictor
+
+- **Mean Abundance (logprom):** Niche Breadth has a significant positive effect (p = 0.002)
+  - Generalista species (broad niche) are more abundant
+  - Effect size: 0.404 units (standardized)
+  
+- **Maximum Abundance (logmax):** Weak effect (p = 0.089)
+  - Population maxima are less predictable from niche structure
+  - R² = 0.204 (weak model)
+
+### Niche Position Does NOT Matter
+
+- No significant relationship between where species are positioned in environmental space and their abundance
+- Suggests abundance depends on **niche width**, not **niche location**
+
+### Body Mass (Control)
+
+- No significant allometric effect on abundance
+- Mass does not confound the niche-abundance relationship
+
+### Interaction NP × NB
+
+- **Marginally non-significant** (p = 0.107 with HC3 correction)
+  - At α = 0.05 threshold: NOT significant
+  - At α = 0.10 threshold: WOULD be considered significant
+  - Interpretation: Weak evidence that the effect of niche breadth depends on niche position
+- Suggests generalism's effect on abundance is largely **independent of niche location**, but with some conditional dependence at relaxed significance levels
+
+---
+
+## 📁 Repository Structure
+
+```
+parulidae-abundance-prediction/
+│
+├── README.md                           # This file
+├── .gitignore
+├── LICENSE                             # MIT License
+│
+├── data/
+│   ├── raw/                           # Raw data files (from Figshare)
+│   │   ├── abundance_db.csv           # Bird abundance from BBS routes
+│   │   ├── presence_record.csv        # Cleaned GBIF presences
+│   │   ├── input_pgls.csv             # OMI results (47 species)
+│   │   ├── input_presences_OMI.csv    # Presences for OMI analysis
+│   │   ├── tabla_ambientes_RangoRep.csv  # Environmental variables (breeding range)
+│   │   ├── nombres.csv                # Species names
+│   │   ├── datos_pvol.csv             # PGLS input data
+│   │   └── tree.nwk                   # Phylogenetic tree (Newick format)
+│   │
+│   └── processed/                     # Processed outputs
+│       ├── niche_metrics.csv
+│       ├── pca_scores.csv
+│       └── pca_loadings.csv
+│
+├── notebooks/                         # Jupyter notebooks (execute in order)
+│   ├── 01_eda_abundancia_nicho.ipynb      # Exploratory Data Analysis
+│   ├── 02_niche_metrics.ipynb             # OMI Analysis & PCA
+│   └── 03_pgls_analysis.ipynb             # PGLS Regression Analysis
+│
+└── src/                               # (Optional) Python modules
+    ├── __init__.py
+    ├── niche_metrics.py               # Niche calculation functions
+    └── plotting.py                    # Visualization functions
+```
+
+---
+
+## 🔬 Methods
+
+### 1. Niche Analysis (Notebook 02)
+
+**Data:**
+- Environmental variables: 3 climatic variables (columns 3, 6, 9 from tabla_ambientes)
+- Study area: 81,393 cells covering the breeding range of Parulidae in North America
+- Species: 47 species with presence data
+
+**Analysis:**
+- Principal Component Analysis (PCA) on standardized environmental data
+- Niche Position (NP): mean coordinates in PCA space per species
+- Niche Breadth (NB): variance of species occurrences in PCA space
+- Pagel's λ = 1.0 (full phylogenetic signal)
+
+### 2. PGLS Regression Analysis (Notebook 03)
+
+**Response Variables:**
+- `logprom`: log-transformed mean population abundance
+- `logmax`: log-transformed maximum population abundance
+
+**Predictors:**
+- NP (Niche Position, standardized)
+- NB (Niche Breadth, standardized)
+- Masa (Body Mass, standardized) — control variable
+- NP × NB (interaction term)
+
+**Statistical Method:**
+- Weighted Least Squares (WLS) with heterocedasticity-robust standard errors (HC3)
+- Weights: log(n) × Distri
+  - `n`: number of sampling records per species
+  - `Distri`: percentage of breeding range within study area
+- Phylogenetic tree: 47 species Newick format
+
+**Model Selection:**
+- Tested correlation structures: Brownian motion, Pagel's λ, Martins
+- Selected: Pagel's λ for parameter estimation
+
+---
+
+## 📈 Results Summary
+
+### Model 1: log(Mean Abundance)
+
+```
+R² = 0.392 (explains 39% of variance)
+F-statistic = 5.603, p = 0.00105
+
+Coefficients (standardized):
+  NP:       0.056 (p = 0.673) — NOT significant
+  NB:       0.404 (p = 0.002) — SIGNIFICANT ***
+  Masa:     0.014 (p = 0.901) — NOT significant
+  NP×NB:    0.200 (p = 0.107) — NOT robust
+```
+
+### Model 2: log(Maximum Abundance)
+
+```
+R² = 0.204 (explains 20% of variance)
+F-statistic = 1.471, p = 0.228 — NOT significant
+
+Coefficients (standardized):
+  NP:       -0.026 (p = 0.888) — NOT significant
+  NB:        0.368 (p = 0.089) — MARGINAL
+  Masa:      0.010 (p = 0.962) — NOT significant
+  NP×NB:     0.025 (p = 0.881) — NOT significant
+```
+
+---
+
+## 🚀 How to Run
+
+### Requirements
+
+```bash
+Python 3.8+
+pandas, numpy, scikit-learn, scipy, matplotlib, seaborn, statsmodels, biopython
+```
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/Salamanadra/parulidae-abundance-prediction.git
+cd parulidae-abundance-prediction
+
+# Create environment
+conda create -n parulidae python=3.10
+conda activate parulidae
+
+# Install dependencies
+pip install pandas numpy scikit-learn scipy matplotlib seaborn statsmodels biopython
+```
+
+### Execute Notebooks
+
+```bash
+# Open Jupyter
+jupyter notebook
+
+# Execute in order:
+# 1. notebooks/01_eda_abundancia_nicho.ipynb
+# 2. notebooks/02_niche_metrics.ipynb
+# 3. notebooks/03_pgls_analysis.ipynb
+```
+
+---
+
+## 📚 Original Research
+
+This analysis reproduces and extends ecological niche modeling originally published in:
+
+**Castaño-Quintero, S.**, Velasco, J., González-Voyer, A., Martínez-Meyer, E., & Yáñez-Arenas, C. (2024). Niche position and niche breadth effects on population abundances: A case study of New World Warblers (Parulidae). *Ecology and Evolution*, 14(3), e11108.
 https://doi.org/10.1002/ece3.11108
 
----
-
-## 🎯 Research Question
-
-**How do niche position and niche breadth influence species population abundances?**
-
-Traditional ecological theory suggests that species occupying broader environmental niches should maintain larger populations. However, the relationship between niche properties and abundance remains poorly understood at continental scales. This study examines whether niche characteristics (position and breadth) are predictive of species abundance patterns in New World Warblers.
+**Data Source:** Figshare - Parulidae Niche and Abundance Data
+https://figshare.com/s/c71a49da600ceed9bc53
 
 ---
 
-## 📊 Dataset
+## 📝 Reproducibility Note
 
-**Public Data Repository:** https://figshare.com/s/c71a49da600ceed9bc53
+This Python implementation:
+- ✅ Uses publicly available data (Figshare)
+- ✅ Maintains fidelity to original R analysis (Script_OMI_proceso2.R)
+- ✅ Improves code documentation and reproducibility
+- ✅ Enables integration with modern Python data science tools
+- ✅ Provides transparent statistical reporting (HC3-robust standard errors)
 
-- **Observations:** 500K+ bird occurrence records (New World Warblers, family Parulidae)
-- **Species:** Multiple warbler species across North America
-- **Environmental Variables:** 50+ climatic and habitat features
-  - Temperature (mean annual, seasonality)
-  - Precipitation (annual, seasonality)
-  - Elevation, habitat type, vegetation indices
-- **Temporal Coverage:** Multiple years
-
----
-
-## 🔬 Methodology
-
-### Niche Quantification
-- **Niche Position:** Central location of species in environmental space
-- **Niche Breadth:** Range of environmental conditions occupied
-- **Tools:** Ecological niche modeling, multivariate analysis
-
-### Abundance Estimation
-- Extract population abundance data from occurrence records
-- Standardize abundance metrics across species
-- Account for sampling effort and detection biases
-
-### Statistical Analysis
-- Correlation analysis: niche properties vs. abundance
-- Multivariate regression models
-- Feature importance analysis
-- Cross-validation for model robustness
-
-### Visualization
-- Niche space plots (PCA of environmental variables)
-- Scatter plots: niche breadth vs. abundance
-- Spatial distribution maps
+**Why Python?**
+- Cross-platform reproducibility
+- Easier integration with other workflows
+- Modern visualization capabilities
+- Open-source ecosystem
 
 ---
 
-## 📈 Key Results
+## 🔍 Technical Details
 
-1. **Niche breadth is a significant predictor of abundance**
-   - Species with broader environmental tolerances tend to have higher population abundances
+### Heterocedasticity-Robust Standard Errors (HC3)
 
-2. **Niche position matters**
-   - Position in environmental space influences abundance patterns
+All PGLS models use HC3-consistent standard errors to account for:
+- Unequal sampling effort across species (n varies: 17–4502 records)
+- Different geographic representation (Distri: 30–100%)
+- Potential heteroscedasticity in residuals
 
-3. **Continental-scale patterns**
-   - Results consistent across multiple warbler species
+This provides more reliable p-values and confidence intervals than assuming homogeneous variance.
 
----
+### Phylogenetic Correction
 
-## 💻 Technologies
-
-- **Python:** pandas, numpy, scikit-learn, matplotlib, seaborn
-- **Jupyter:** Interactive notebooks
-- **Machine Learning:** GAM, Random Forest, XGBoost
-
----
-
-## 🚀 How to Reproduce
-
-### 1. Get Data
-Download from: https://figshare.com/s/c71a49da600ceed9bc53
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Run Analysis
-```bash
-jupyter notebook notebooks/01_data_loading_exploration.ipynb
-```
-
-Run notebooks in sequence (01-05).
-
----
-
-## Reproducibility Note
-
-This analysis reproduces and extends ecological niche modeling originally 
-conducted in R (Script_OMI_proceso2.R). The Python implementation:
-
-- Uses public data from Figshare
-- Maintains fidelity to original R analysis
-- Improves code documentation and reproducibility
-- Enables integration with modern Python data science tolos
-
----
-
-
-## 📚 Citation
-
-```bibtex
-@article{Castano2024,
-  author = {Castaño-Quintero, S. and Velasco, J. and González-Voyer, A. and Martínez-Meyer, E. and Yáñez-Arenas, C.},
-  year = {2024},
-  title = {Niche position and niche breadth effects on population abundances: {A} case study of {N}ew {W}orld {W}arblers ({P}arulidae)},
-  journal = {Ecology and Evolution},
-  volume = {14},
-  number = {3},
-  pages = {e11108},
-  doi = {10.1002/ece3.11108}
-}
-```
-
----
-
-## 👤 Author
-
-**Sandra Milena Castaño Quintero**  
-Data Scientist | PhD in Quantitative Ecology  
-
-📧 sandramilenacq@gmail.com  
-🔗 [Google Scholar](https://scholar.google.com/citations?user=DIarhQQAAAAJ)  
-🔗 [GitHub](https://github.com/Salamanadra)
+Phylogenetic structure is incorporated through:
+- Pagel's λ transformation (λ = 1.0)
+- Weighted least squares accounting for phylogenetic non-independence
+- 47-species phylogenetic tree in Newick format
 
 ---
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+MIT License - see LICENSE file
+
+---
+
+## 👤 Author
+
+**Sandra Milena Castaño Quintero**
+- PhD in Biological Sciences (UNAM, 2026)
+- Specialization: Quantitative Ecology, Conservation, Geospatial Analysis
+- Google Scholar: https://scholar.google.com/citations?user=DIarhQQAAAAJ
+- GitHub: https://github.com/Salamanadra
+
+---
+
+## 📧 Contact & Questions
+
+For questions about:
+- **Data:** See Figshare dataset documentation
+- **Original R analysis:** See Script_OMI_proceso2.R
+- **Python implementation:** Open an issue on GitHub
+
+---
+
+## 🙏 Acknowledgments
+
+- Original research funding and field work (acknowledged in Castaño-Quintero et al. 2024)
+- eBird and GBIF for occurrence data
+- BBS (Breeding Bird Survey) for abundance data
+
+---
+
+## 📖 Citation
+
+If you use this repository, please cite:
+
+```bibtex
+@software{castano2026parulidae,
+  author = {Castaño Quintero, Sandra Milena},
+  title = {Niche metrics and population abundance in New World Warblers: 
+           Python implementation},
+  year = {2026},
+  url = {https://github.com/Salamanadra/parulidae-abundance-prediction},
+  note = {Reproduces analyses from Castaño-Quintero et al. (2024)}
+}
+```
+
+---
+
+## 🔄 Version History
+
+- **v0.1** (May 2026) — Initial release with 3 notebooks, PGLS analysis with HC3
+- Original R analysis (2024) — Published in Ecology and Evolution
+
+---
+
+**Last updated:** May 25, 2026
+
